@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -25,14 +26,58 @@ func (p *Proxy) IsActive() bool {
 }
 
 func (p *Proxy) URL() string {
+	return p.urlWithCredentials(p.Username, p.Password)
+}
+
+// URLForAccount renders proxy credentials with account-aware placeholders.
+// This keeps existing static proxy behavior unchanged while allowing a single
+// proxy definition to expose distinct upstream identities per account.
+func (p *Proxy) URLForAccount(account *Account) string {
+	return p.urlWithCredentials(
+		renderProxyCredentialTemplate(p.Username, account),
+		renderProxyCredentialTemplate(p.Password, account),
+	)
+}
+
+func (p *Proxy) urlWithCredentials(username, password string) string {
 	u := &url.URL{
 		Scheme: p.Protocol,
 		Host:   net.JoinHostPort(p.Host, strconv.Itoa(p.Port)),
 	}
-	if p.Username != "" && p.Password != "" {
-		u.User = url.UserPassword(p.Username, p.Password)
+	if username != "" && password != "" {
+		u.User = url.UserPassword(username, password)
 	}
 	return u.String()
+}
+
+func renderProxyCredentialTemplate(raw string, account *Account) string {
+	if raw == "" {
+		return ""
+	}
+
+	replacements := []string{
+		"{ACCOUNT_ID}", "",
+		"{ACCOUNT_NAME}", "",
+		"{PLATFORM}", "",
+		"{TYPE}", "",
+		"{RESIN_ACCOUNT}", "",
+		"{CHATGPT_ACCOUNT_ID}", "",
+		"{PROJECT_ID}", "",
+		"{CLAUDE_USER_ID}", "",
+	}
+	if account != nil {
+		replacements = []string{
+			"{ACCOUNT_ID}", strconv.FormatInt(account.ID, 10),
+			"{ACCOUNT_NAME}", strings.TrimSpace(account.Name),
+			"{PLATFORM}", strings.TrimSpace(account.Platform),
+			"{TYPE}", strings.TrimSpace(account.Type),
+			"{RESIN_ACCOUNT}", account.GetProxyAccountIdentity(),
+			"{CHATGPT_ACCOUNT_ID}", strings.TrimSpace(account.GetChatGPTAccountID()),
+			"{PROJECT_ID}", strings.TrimSpace(account.GetCredential("project_id")),
+			"{CLAUDE_USER_ID}", strings.TrimSpace(account.GetClaudeUserID()),
+		}
+	}
+	return strings.NewReplacer(replacements...).Replace(raw)
 }
 
 type ProxyWithAccountCount struct {

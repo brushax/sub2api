@@ -77,6 +77,35 @@ func (a *Account) IsActive() bool {
 	return a.Status == StatusActive
 }
 
+// GetProxyAccountIdentity returns a stable identifier suitable for external
+// sticky-proxy systems such as Resin. Platform-specific account identifiers are
+// preferred when available; otherwise account ID is used as a stable fallback.
+func (a *Account) GetProxyAccountIdentity() string {
+	if a == nil {
+		return ""
+	}
+	if v := strings.TrimSpace(a.GetChatGPTAccountID()); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(a.GetCredential("project_id")); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(a.GetClaudeUserID()); v != "" {
+		return v
+	}
+	if a.ID > 0 {
+		return strconv.FormatInt(a.ID, 10)
+	}
+	return ""
+}
+
+func (a *Account) GetProxyURL() string {
+	if a == nil || a.Proxy == nil {
+		return ""
+	}
+	return a.Proxy.URLForAccount(a)
+}
+
 // BillingRateMultiplier 返回账号计费倍率。
 // - nil 表示未配置/旧缓存缺字段，按 1.0 处理
 // - 允许 0，表示该账号计费为 0

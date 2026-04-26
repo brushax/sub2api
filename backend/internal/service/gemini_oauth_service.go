@@ -412,7 +412,7 @@ func (s *GeminiOAuthService) RefreshAccountGoogleOneTier(
 	// 获取 proxy URL
 	var proxyURL string
 	if account.ProxyID != nil && account.Proxy != nil {
-		proxyURL = account.Proxy.URL()
+		proxyURL = account.GetProxyURL()
 	}
 
 	// 调用 Drive API
@@ -750,7 +750,7 @@ func (s *GeminiOAuthService) RefreshAccountToken(ctx context.Context, account *A
 	if account.ProxyID != nil {
 		proxy, err := s.proxyRepo.GetByID(ctx, *account.ProxyID)
 		if err == nil && proxy != nil {
-			proxyURL = proxy.URL()
+			proxyURL = proxy.URLForAccount(account)
 		}
 	}
 

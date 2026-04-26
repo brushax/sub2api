@@ -320,7 +320,7 @@ func (s *OpenAIOAuthService) RefreshAccountToken(ctx context.Context, account *A
 	if account.ProxyID != nil {
 		proxy, err := s.proxyRepo.GetByID(ctx, *account.ProxyID)
 		if err == nil && proxy != nil {
-			proxyURL = proxy.URL()
+			proxyURL = proxy.URLForAccount(account)
 		}
 	}
 
