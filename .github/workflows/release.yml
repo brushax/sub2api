@@ -41,8 +41,12 @@ jobs:
           else
             VERSION=${GITHUB_REF#refs/tags/v}
           fi
-          echo "$VERSION" > backend/cmd/server/VERSION
-          echo "Updated VERSION file to: $VERSION"
+          DISPLAY_VERSION="${VERSION%%-*}"
+          if [ -z "$DISPLAY_VERSION" ]; then
+            DISPLAY_VERSION="$VERSION"
+          fi
+          echo "$DISPLAY_VERSION" > backend/cmd/server/VERSION
+          echo "Updated VERSION file to: $DISPLAY_VERSION (from tag: $VERSION)"
 
       - name: Upload VERSION artifact
         uses: actions/upload-artifact@v7
